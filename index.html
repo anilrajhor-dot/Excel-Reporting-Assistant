@@ -1,0 +1,941 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}</style>
+<title>Excel &amp; Reporting Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a workbook. Sheet tabs sit along the bottom like Excel's, a formula bar (name box, fx, formula) carries every answer, and plain-English steps sit underneath. */
+:root{
+  --bg:#f2f5f1; --surface:#ffffff; --surface2:#e8eee7; --ink:#16231b; --muted:#53655a; --line:#d1dcd3; --grid:#e2e9e2;
+  --accent:#17653f; --accent-ink:#ffffff; --accent-soft:#d9eddf;
+  --warn:#85500a; --warn-soft:#faedd2;
+  --f-display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --f-body:'IBM Plex Sans','Segoe UI',system-ui,-apple-system,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Consolas,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1511; --surface:#151f19; --surface2:#1c2922; --ink:#e5eee7; --muted:#9db3a4; --line:#2a3b30; --grid:#212f27;
+  --accent:#5ccb8c; --accent-ink:#07170e; --accent-soft:#1a3324;
+  --warn:#e7b45c; --warn-soft:#30260f; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0e1511; --surface:#151f19; --surface2:#1c2922; --ink:#e5eee7; --muted:#9db3a4; --line:#2a3b30; --grid:#212f27;
+  --accent:#5ccb8c; --accent-ink:#07170e; --accent-soft:#1a3324;
+  --warn:#e7b45c; --warn-soft:#30260f; color-scheme:dark;}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--f-body);margin:0}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:clamp(26px,5vw,36px);font-weight:700;letter-spacing:-.01em}
+h2{font-size:21px;font-weight:700}
+h3{font-family:var(--f-body);font-size:15px;font-weight:600}
+p{margin:0;max-width:68ch}
+.muted{color:var(--muted)}
+.wrap{max-width:940px;margin:0 auto;padding-inline:16px;padding-block:22px 96px}
+.top{display:grid;gap:8px;margin-bottom:22px}
+.panel{display:grid;gap:20px}
+.panel[hidden]{display:none!important}
+.blk{display:grid;gap:8px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:12px;min-width:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px}
+.field{display:grid;gap:5px;min-width:0;align-content:start}
+label{font-weight:500;font-size:13px;color:var(--muted)}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:9px 10px;width:100%;min-width:0}
+input[type=checkbox]{width:auto;margin-top:4px;accent-color:var(--accent)}
+textarea{font-family:var(--f-mono);font-size:13px;line-height:1.45;resize:vertical;white-space:pre}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{font:inherit;cursor:pointer}
+.btn{background:var(--accent);color:var(--accent-ink);border:1px solid var(--accent);border-radius:6px;padding:8px 14px;font-weight:600}
+.btn.ghost{background:transparent;color:var(--accent)}
+.link{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;font:inherit}
+.row{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center}
+.pill{display:inline-block;font:500 12px/1.6 var(--f-body);padding:1px 10px;border-radius:99px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+
+.fbar{display:flex;align-items:stretch;border:1px solid var(--line);background:var(--surface);border-radius:8px;overflow:hidden}
+.fbar .nb{font:500 13px var(--f-mono);padding:10px 12px;border-right:1px solid var(--line);background:var(--surface2);min-width:3.4rem;display:flex;align-items:center;justify-content:center}
+.fbar .fx{font:italic 600 15px var(--f-body);padding:0 11px;color:var(--accent);border-right:1px solid var(--line);display:flex;align-items:center}
+.fbar code{flex:1;min-width:0;font:500 14px/1.55 var(--f-mono);padding:10px 12px;white-space:pre-wrap;overflow-wrap:anywhere;display:block}
+.fbar .copy{border:0;border-left:1px solid var(--line);background:var(--surface2);color:var(--accent);font-weight:600;padding:0 14px;min-width:5.2rem}
+
+.result{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;padding:12px 14px;background:var(--accent-soft);border-radius:8px}
+.result .big{font:600 24px var(--f-mono);color:var(--accent);overflow-wrap:anywhere}
+.watch{background:var(--warn-soft);border-radius:8px;padding:12px 14px;display:grid;gap:6px}
+.watch h3{color:var(--warn)}
+.watch ul{margin:0;padding-left:1.2em;display:grid;gap:5px}
+ol.steps{margin:0;padding-left:1.4em;display:grid;gap:8px}
+ol.steps li::marker{font-weight:600;color:var(--accent)}
+ol.steps li{padding-left:.2em}
+b{font-weight:600}
+
+.sheet{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.sheet table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+.sheet th,.sheet td{border:1px solid var(--grid);padding:6px 10px;white-space:nowrap;text-align:left}
+.sheet thead th{background:var(--surface2);color:var(--muted);font-weight:500;text-align:center}
+.sheet .rn{background:var(--surface2);color:var(--muted);text-align:center;width:2.6rem;font-weight:400}
+.sheet tr.hdr td{font-weight:600;background:var(--accent-soft)}
+.sheet td.n{text-align:right}
+.sheet th small{display:block;font-weight:400;font-size:11px}
+.sheet tfoot td{font-weight:600;background:var(--surface2)}
+.pv td.bar{width:40%;min-width:90px}
+.pv .bar i{display:block;height:10px;background:var(--accent);border-radius:2px;width:0}
+
+details{border-top:1px solid var(--line);padding:11px 0}
+details>summary{cursor:pointer;font-weight:600;list-style:none;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+details>summary::-webkit-details-marker{display:none}
+details>summary::before{content:'+';font-family:var(--f-mono);color:var(--accent);width:1.2ch}
+details[open]>summary::before{content:'\2212'}
+details>div{display:grid;gap:10px;padding:10px 0 2px 2.2ch}
+.fixlist{border-bottom:1px solid var(--line)}
+
+.wf{display:grid;gap:8px;padding:12px;background:var(--surface2);border:1px dashed var(--line);border-radius:10px}
+.wf .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.wf .tile{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:13px;display:grid;gap:2px}
+.wf .tile b{font:600 17px var(--f-mono);color:var(--muted)}
+.wf .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:8px}
+.wf .ph{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px;min-height:92px;display:grid;align-content:space-between;gap:8px;font-size:13px}
+.wf .ph small{color:var(--muted)}
+.chk{display:flex;gap:9px;font-size:14px;font-weight:400;color:var(--ink)}
+.checks{display:grid;gap:8px}
+
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;display:flex;gap:3px;padding:0 8px calc(0px + env(safe-area-inset-bottom,0px));background:var(--surface2);border-top:1px solid var(--line);overflow-x:auto}
+.tabs button{flex:1 0 auto;background:transparent;border:1px solid transparent;border-top:0;border-bottom:3px solid transparent;color:var(--muted);font:500 14px var(--f-body);padding:11px 14px 9px;white-space:nowrap}
+.tabs button[aria-selected=true]{background:var(--surface);color:var(--accent);border-color:var(--line);border-bottom-color:var(--accent)}
+@media (prefers-reduced-motion:no-preference){.result .big{transition:color .2s}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Excel &amp; Reporting Assistant</h1>
+    <p class="muted" id="hello">Paste a few rows of your sheet. Get the exact formula, the menu steps and the right report format.</p>
+  </header>
+
+  <!-- FORMULAS -->
+  <section class="panel" id="p-formulas" role="tabpanel" aria-labelledby="t-formulas">
+    <div class="blk">
+      <h2>Get a formula</h2>
+      <div id="using-f" class="row muted"></div>
+    </div>
+    <div class="grid">
+      <div class="field"><label for="recipe">What do you want to do?</label><select id="recipe"></select></div>
+      <div class="field"><label for="rangemode">How should ranges be written?</label>
+        <select id="rangemode"><option value="whole">Whole columns, like E:E (grows with your data)</option><option value="exact">Exact rows, like $E$2:$E$13</option></select></div>
+    </div>
+    <div class="grid" id="params"></div>
+    <div id="out" class="panel"></div>
+  </section>
+
+  <!-- DATA -->
+  <section class="panel" id="p-data" role="tabpanel" aria-labelledby="t-data" hidden>
+    <div class="blk">
+      <h2>Your sheet</h2>
+      <p class="muted">Copy a few rows from Excel, heading row included, and paste them below. The assistant uses your real column letters so formulas work when you paste them in.</p>
+    </div>
+    <div class="card">
+      <div class="field"><label for="paste">Paste sample data</label>
+        <textarea id="paste" rows="8" spellcheck="false" placeholder="Region&#9;Product&#9;Amount&#10;North&#9;Laptop&#9;240000"></textarea></div>
+      <div class="row"><button class="btn" id="b-sample" type="button">Load example</button><button class="btn ghost" id="b-clear" type="button">Clear</button><span class="pill warn" id="sample-flag" hidden>Example data</span></div>
+    </div>
+    <div class="card">
+      <h3>Confirm the layout</h3>
+      <div class="grid">
+        <div class="field"><label for="hdr">Heading row number in Excel</label><input id="hdr" type="number" min="1" max="1000" value="1" inputmode="numeric"></div>
+        <div class="field"><label for="col0">First column letter</label><input id="col0" type="text" maxlength="2" value="A" autocomplete="off"></div>
+      </div>
+      <p id="readout" class="muted"></p>
+    </div>
+    <div id="preview" class="blk"></div>
+    <div id="health" class="blk"></div>
+  </section>
+
+  <!-- REPORT -->
+  <section class="panel" id="p-report" role="tabpanel" aria-labelledby="t-report" hidden>
+    <div class="blk">
+      <h2>Build a report</h2>
+      <div id="using-r" class="row muted"></div>
+    </div>
+    <div id="rep-ctrl" class="grid">
+      <div class="field"><label for="r-cat">Group by</label><select id="r-cat"></select></div>
+      <div class="field"><label for="r-val">Measure</label><select id="r-val"></select></div>
+      <div class="field"><label for="r-fn">Calculation</label><select id="r-fn"><option>Sum</option><option>Count</option><option>Average</option></select></div>
+      <div class="field"><label for="r-goal">What should the report show?</label><select id="r-goal"></select></div>
+    </div>
+    <div id="rep-out" class="panel"></div>
+    <div class="blk">
+      <h2>Plan the report page</h2>
+      <p class="muted">Pick the kind of report you build. You get a layout to copy and a checklist for making it presentation-ready.</p>
+    </div>
+    <div class="grid"><div class="field"><label for="lay">Report type</label><select id="lay"></select></div></div>
+    <div id="lay-out" class="panel"></div>
+  </section>
+
+  <!-- FIX -->
+  <section class="panel" id="p-fix" role="tabpanel" aria-labelledby="t-fix" hidden>
+    <div class="blk">
+      <h2>Fix it</h2>
+      <p class="muted">Find the error or problem you see, in plain words.</p>
+    </div>
+    <div class="field"><label for="fix-q">Search</label><input id="fix-q" type="search" placeholder="Try: #N/A, blank, pivot, dates, text" autocomplete="off"></div>
+    <div id="fix-list" class="fixlist"></div>
+    <div class="card">
+      <h3>Hide errors with IFERROR</h3>
+      <p class="muted">Paste a formula that sometimes shows an error. The example below divides Amount by Units.</p>
+      <div class="grid">
+        <div class="field"><label for="ife-in">Your formula</label><input id="ife-in" type="text" value="=E2/D2" spellcheck="false" autocomplete="off"></div>
+        <div class="field"><label for="ife-fb">If there is an error, show</label>
+          <select id="ife-fb"><option value="blank">Nothing (blank)</option><option value="zero">0</option><option value="nf">Not found</option><option value="custom">My own text</option></select></div>
+        <div class="field" id="ife-cw" hidden><label for="ife-custom">My own text</label><input id="ife-custom" type="text" value="Check data" autocomplete="off"></div>
+      </div>
+      <div id="ife-out" class="blk"></div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="panel" id="p-about" role="tabpanel" aria-labelledby="t-about" hidden>
+    <div class="blk">
+      <h2>About you</h2>
+      <p class="muted">All optional. Leave anything blank. What you type stays in this browser.</p>
+    </div>
+    <div class="grid">
+      <div class="field"><label for="a-name">My name is</label><input id="a-name" type="text" autocomplete="off"></div>
+      <div class="field"><label for="a-role">My role / job title is</label><input id="a-role" type="text" autocomplete="off"></div>
+      <div class="field"><label for="a-dept">My department is</label><input id="a-dept" type="text" placeholder="e.g. Sales, Finance, HR, Operations" autocomplete="off"></div>
+      <div class="field"><label for="a-tools">Tools I use</label><input id="a-tools" type="text" placeholder="e.g. Excel, Google Sheets, Power BI" autocomplete="off"></div>
+      <div class="field"><label for="a-level">My Excel skill level is</label>
+        <select id="a-level"><option value="">Not set</option><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select></div>
+      <div class="field"><label for="a-reports">Report types I usually build</label><input id="a-reports" type="text" placeholder="e.g. sales reports, budget trackers, HR dashboards" autocomplete="off"></div>
+    </div>
+    <div class="blk">
+      <h3>How every answer is built</h3>
+      <ol class="steps">
+        <li><b>Clarify the data.</b> The Your Data tab confirms heading row, first column and column types before any formula is written.</li>
+        <li><b>Exact solution.</b> You get the formula with real cell references, one plain sentence on what it does, and numbered menu steps.</li>
+        <li><b>Right format.</b> Each answer says whether a formula, a PivotTable or a chart fits best, and which chart type.</li>
+        <li><b>Usable.</b> A worked example from your own rows and a list of common mistakes come with it.</li>
+        <li><b>Beginner-friendly.</b> No jargon, and a simpler alternative where one exists. Choose Advanced above to collapse the step lists.</li>
+      </ol>
+    </div>
+  </section>
+</div>
+
+<nav class="tabs" role="tablist" aria-label="Sections">
+  <button type="button" role="tab" id="t-formulas" data-go="formulas" aria-controls="p-formulas" aria-selected="true">Formulas</button>
+  <button type="button" role="tab" id="t-data" data-go="data" aria-controls="p-data" aria-selected="false">Your Data</button>
+  <button type="button" role="tab" id="t-report" data-go="report" aria-controls="p-report" aria-selected="false">Report</button>
+  <button type="button" role="tab" id="t-fix" data-go="fix" aria-controls="p-fix" aria-selected="false">Fix It</button>
+  <button type="button" role="tab" id="t-about" data-go="about" aria-controls="p-about" aria-selected="false">About You</button>
+</nav>
+
+<script>
+(function(){
+'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const nf=new Intl.NumberFormat('en-IN',{maximumFractionDigits:2});
+const fmt=n=>nf.format(n);
+const pf=x=>(x*100).toFixed(1)+'%';
+const b=s=>'<b>'+esc(s)+'</b>';
+
+/* ---------- sample ---------- */
+const SAMPLE_ROWS=[
+ ['Region','Salesperson','Product','Units','Amount','Order Date'],
+ ['North','Asha Verma','Laptop','4','240000','05-Jan-2026'],
+ ['South','Ravi Nair','Printer','6','90000','12-Jan-2026'],
+ ['North','Meena Iyer','Monitor','10','150000','19-Jan-2026'],
+ ['East','Karan Shah','Laptop','3','180000','02-Feb-2026'],
+ ['West','Sunita Rao','Tablet','8','160000','09-Feb-2026'],
+ ['South','Ravi Nair','Laptop','5','300000','16-Feb-2026'],
+ ['North','Asha Verma','Printer','7','105000','23-Feb-2026'],
+ ['East','Karan Shah','Monitor','12','180000','02-Mar-2026'],
+ ['West','Sunita Rao','Laptop','2','120000','09-Mar-2026'],
+ ['South','Vikram Das','Tablet','9','180000','16-Mar-2026'],
+ ['North','Meena Iyer','Laptop','6','360000','23-Mar-2026'],
+ ['East','Priya Menon','Printer','4','60000','30-Mar-2026']
+];
+const SAMPLE=SAMPLE_ROWS.map(r=>r.join('\t')).join('\n');
+
+/* ---------- state ---------- */
+const S={raw:'',headers:[],rows:[],cols:[],headerRow:1,startCol:'A',whole:true,sample:false,recipe:'sumifs',level:''};
+let P={};
+const REP={cat:0,val:0,fn:'Sum',goal:'compare'};
+const firstRow=()=>S.headerRow+1;
+const lastRow=()=>S.headerRow+Math.max(S.rows.length,1);
+
+/* ---------- letters ---------- */
+function idxToLetter(n){let s='';n++;while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26);}return s;}
+function letterToIdx(s){return s.toUpperCase().split('').reduce((a,c)=>a*26+c.charCodeAt(0)-64,0)-1;}
+
+/* ---------- parsing ---------- */
+function splitLine(line,d){
+  if(d==='\t')return line.split('\t');
+  const out=[];let cur='',q=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(q){if(ch==='"'){if(line[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=ch;}
+    else if(ch==='"')q=true;
+    else if(ch===d){out.push(cur);cur='';}
+    else cur+=ch;
+  }
+  out.push(cur);return out;
+}
+function parseTable(text){
+  const lines=text.replace(/\r/g,'').split('\n').filter(l=>l.trim()!=='');
+  if(!lines.length)return{headers:[],rows:[]};
+  let d='\t';
+  if(!lines.some(l=>l.includes('\t'))){
+    const c={',':0,';':0,'|':0};
+    Object.keys(c).forEach(k=>{c[k]=lines[0].split(k).length-1;});
+    const best=Object.keys(c).sort((a,z)=>c[z]-c[a])[0];
+    d=c[best]>0?best:'sp';
+  }
+  const split=l=>d==='sp'?l.trim().split(/\s{2,}/):splitLine(l,d);
+  const grid=lines.map(split);
+  const w=Math.max.apply(null,grid.map(r=>r.length));
+  const headers=grid[0].map(h=>h.trim());while(headers.length<w)headers.push('');
+  const rows=grid.slice(1).map(r=>{const x=r.slice();while(x.length<w)x.push('');return x;});
+  return{headers,rows};
+}
+function parseNum(s){
+  if(typeof s==='number')return s;
+  let t=String(s).trim();if(t==='')return NaN;
+  let neg=false;if(/^\(.*\)$/.test(t)){neg=true;t=t.slice(1,-1);}
+  t=t.replace(/[₹$€£\s]/g,'').replace(/^(rs\.?|inr)/i,'');
+  let pct=false;if(t.endsWith('%')){pct=true;t=t.slice(0,-1);}
+  if(!/^-?\d[\d,]*\.?\d*$|^-?\.\d+$/.test(t))return NaN;
+  let n=parseFloat(t.replace(/,/g,''));if(isNaN(n))return NaN;
+  if(pct)n/=100;return neg?-n:n;
+}
+const DATE_RE=/^(\d{1,4}[\/\-.]\d{1,2}[\/\-.]\d{1,4}|\d{1,2}[\s\-](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[\s\-,]*\d{2,4})$/i;
+function analyse(){
+  const L0=letterToIdx(S.startCol);
+  S.cols=S.headers.map((h,i)=>{
+    const vals=S.rows.map(r=>r[i]==null?'':String(r[i]));
+    const filled=vals.filter(v=>v.trim()!=='');
+    const nums=filled.filter(v=>!isNaN(parseNum(v)));
+    const dates=filled.filter(v=>DATE_RE.test(v.trim()));
+    let type='text';
+    if(filled.length){if(dates.length/filled.length>=.8)type='date';else if(nums.length/filled.length>=.8)type='number';}
+    const firstText=filled.find(v=>isNaN(parseNum(v)));
+    return{i,name:h||('Column '+idxToLetter(L0+i)),letter:idxToLetter(L0+i),type,filled:filled.length,
+      issues:{
+        blanks:vals.length-filled.length,
+        spaces:filled.filter(v=>v!==v.trim()||/\s{2,}/.test(v)).length,
+        formatted:type==='number'?nums.filter(v=>!/^-?\d+(\.\d+)?$/.test(v.trim())).length:0,
+        nonNumeric:type==='number'?filled.length-nums.length:0,
+        sampleText:type==='number'&&firstText?firstText.trim():''
+      }};
+  });
+}
+
+/* ---------- criteria ---------- */
+function critArg(v){
+  v=String(v).trim();
+  if(v==='')return'""';
+  if(/^(>=|<=|<>|>|<|=)/.test(v))return'"'+v.replace(/"/g,'""')+'"';
+  if(/^-?\d+(\.\d+)?$/.test(v))return v;
+  return'"'+v.replace(/"/g,'""')+'"';
+}
+function litArg(v){
+  v=String(v).trim();
+  return /^-?\d+(\.\d+)?$/.test(v)?v:'"'+v.replace(/"/g,'""')+'"';
+}
+function matcher(v){
+  v=String(v).trim();let op='=',rest=v;
+  const m=v.match(/^(>=|<=|<>|>|<|=)([\s\S]*)$/);
+  if(m){op=m[1];rest=m[2].trim();}
+  const rn=parseNum(rest),lr=rest.toLowerCase();
+  const wild=/[*?]/.test(lr)&&(op==='='||op==='<>');
+  const re=wild?new RegExp('^'+lr.replace(/[.+^${}()|[\]\\]/g,'\\$&').replace(/\*/g,'.*').replace(/\?/g,'.')+'$'):null;
+  return cell=>{
+    const s=String(cell).trim(),cn=parseNum(s);
+    if(rest!==''&&!isNaN(rn)&&!isNaN(cn)){
+      switch(op){case'>':return cn>rn;case'<':return cn<rn;case'>=':return cn>=rn;case'<=':return cn<=rn;case'<>':return cn!==rn;default:return cn===rn;}
+    }
+    const a=s.toLowerCase();
+    if(op==='='||op==='<>'){const eq=re?re.test(a):a===lr;return op==='='?eq:!eq;}
+    switch(op){case'>':return a>lr;case'<':return a<lr;case'>=':return a>=lr;default:return a<=lr;}
+  };
+}
+
+/* ---------- reference helpers ---------- */
+const nm=ci=>S.cols[ci].name;
+const vals=ci=>S.rows.map(r=>r[ci]==null?'':String(r[ci]));
+const nums=ci=>S.rows.map(r=>parseNum(r[ci]));
+const R=(ci,exact)=>{const l=S.cols[ci].letter;return(S.whole&&!exact)?l+':'+l:'$'+l+'$'+firstRow()+':$'+l+'$'+lastRow();};
+const C=ci=>S.cols[ci].letter+firstRow();
+const CA=ci=>'$'+S.cols[ci].letter+'$'+firstRow();
+const lastIdx=()=>letterToIdx(S.cols[S.cols.length-1].letter);
+const tgtL=rowWise=>idxToLetter(lastIdx()+(rowWise?1:2));
+const tgt=rowWise=>tgtL(rowWise)+firstRow();
+const median=a=>{const x=a.filter(n=>!isNaN(n)).sort((p,q)=>p-q);if(!x.length)return 0;const m=Math.floor(x.length/2);return x.length%2?x[m]:(x[m-1]+x[m])/2;};
+function distinct(ci,max){
+  const seen=new Map();
+  S.rows.forEach(r=>{const v=String(r[ci]==null?'':r[ci]).trim();if(v&&!seen.has(v.toLowerCase()))seen.set(v.toLowerCase(),v);});
+  return Array.from(seen.values()).slice(0,max||60);
+}
+const numCols=()=>S.cols.filter(c=>c.type==='number').map(c=>c.i);
+const textCols=()=>S.cols.filter(c=>c.type!=='number').map(c=>c.i);
+const allCols=()=>S.cols.map(c=>c.i);
+function candidates(kind){const a=kind==='num'?numCols():kind==='text'?textCols():allCols();return a.length?a:allCols();}
+function pickDefault(kind,used){
+  const c=candidates(kind);let pool=c.filter(i=>!used.has(i));if(!pool.length)pool=c;
+  if(kind==='num'){const pref=pool.find(i=>/amount|total|value|sales|revenue|price|cost|balance|salary/i.test(nm(i)));if(pref!==undefined)return pref;}
+  return pool[0];
+}
+
+/* ---------- warnings and steps ---------- */
+function dataWarns(cis){
+  const w=[];
+  cis.forEach(ci=>{
+    const c=S.cols[ci];
+    if(c.issues.formatted)w.push(b(c.name)+' has '+c.issues.formatted+' value'+(c.issues.formatted>1?'s':'')+' with commas or symbols. If they are left-aligned in Excel or show a green triangle, they are text and formulas will skip them. See <b>Fix It</b>.');
+    if(c.issues.nonNumeric)w.push(b(c.name)+' has '+c.issues.nonNumeric+' cell'+(c.issues.nonNumeric>1?'s':'')+' that are not numbers (for example '+b(c.issues.sampleText)+'). Totals and averages skip them.');
+    if(c.issues.spaces&&c.type!=='number')w.push(b(c.name)+' has '+c.issues.spaces+' entr'+(c.issues.spaces>1?'ies':'y')+' with extra spaces. &ldquo;North &rdquo; does not match &ldquo;North&rdquo;. Clean them with the <b>Remove extra spaces</b> formula.');
+  });
+  return w;
+}
+function summarySteps(cell){
+  return[
+    'Click an empty cell away from your data, such as '+b(cell)+'.',
+    'Type the formula exactly as shown in the bar above, or press <b>Copy</b> and then <b>Ctrl+V</b>.',
+    'Press <b>Enter</b>. The answer appears in the cell.',
+    'To change the condition later, click the cell and edit the quoted text in the formula bar, or point the formula at a cell that holds the condition.'
+  ];
+}
+function rowSteps(cell,head,extra){
+  const hl=cell.replace(/\d+$/,'')+S.headerRow;
+  const s=[
+    'Click cell '+b(hl)+', right next to your last heading, and type a heading such as '+b(head)+'.',
+    'Click cell '+b(cell)+', type the formula (or press <b>Copy</b> then <b>Ctrl+V</b>) and press <b>Enter</b>.',
+    'Click '+b(cell)+' again and double-click the small square at its bottom-right corner. Excel copies the formula down to the last row.'
+  ];
+  if(extra)s.push(extra);
+  return s;
+}
+function proofRows(cols,idxs){
+  const max=6;
+  return{headers:cols.map(nm),rows:idxs.slice(0,max).map(i=>cols.map(c=>String(S.rows[i][c]==null?'':S.rows[i][c]).trim())),more:Math.max(0,idxs.length-max)};
+}
+function rowProof(cols,res,head){
+  const n=5;
+  return{title:'Check the first rows',headers:cols.map(nm).concat([head]),
+    rows:res.slice(0,n).map((x,i)=>cols.map(c=>String(S.rows[i][c]==null?'':S.rows[i][c]).trim()).concat([String(x)])),
+    more:Math.max(0,S.rows.length-n)};
+}
+
+/* ---------- recipes ---------- */
+const RECIPES=[
+{id:'sumifs',group:'Add up',label:'Total where a column matches',
+ fields:[{k:'sum',label:'Add up this column',kind:'num'},{k:'crit',label:'Where this column…',kind:'any'},{k:'val',label:'…is (type or pick)',kind:'val',of:'crit'}],
+ build(p){
+  const m=matcher(p.val),cv=vals(p.crit),nv=nums(p.sum);let t=0;const hit=[];
+  cv.forEach((v,i)=>{if(m(v)){hit.push(i);if(!isNaN(nv[i]))t+=nv[i];}});
+  const f='=SUMIFS('+R(p.sum)+','+R(p.crit)+','+critArg(p.val)+')';
+  const cc=tgtL(false)+S.headerRow;
+  const pr=proofRows([p.crit,p.sum],hit);pr.foot=['Total',fmt(t)];
+  return{cell:tgt(false),formula:f,
+   plain:'Adds up '+b(nm(p.sum))+' for every row where '+b(nm(p.crit))+' is '+b(p.val)+'.',
+   result:fmt(t),note:hit.length+' matching row'+(hit.length===1?'':'s'),proof:pr,steps:summarySteps(tgt(false)),
+   warnings:dataWarns([p.sum,p.crit]).concat(['The first range is the numbers to add. Each pair after it is &ldquo;where to look&rdquo; and &ldquo;what to match&rdquo;. Every range must be the same size.','Text in a formula needs quotes. Numbers do not. To match a number or a rule, write it as <b>&quot;&gt;=100000&quot;</b>.']),
+   alts:[{title:'Simpler to change: read the condition from a cell',formula:'=SUMIFS('+R(p.sum)+','+R(p.crit)+','+cc+')',note:'Type '+b(p.val)+' in cell '+b(cc)+'. Change that cell to get the total for another '+esc(nm(p.crit))+', no editing of the formula needed.'}],
+   format:{pick:'Formula',why:'You asked for one number. For a total for every '+nm(p.crit)+' at once, a PivotTable is faster (Report tab).'}};
+ }},
+{id:'sumifs2',group:'Add up',label:'Total where two conditions are true',
+ fields:[{k:'sum',label:'Add up this column',kind:'num'},{k:'c1',label:'First condition column',kind:'any'},{k:'v1',label:'…is',kind:'val',of:'c1'},{k:'c2',label:'Second condition column',kind:'any'},{k:'v2',label:'…is',kind:'val',of:'c2'}],
+ build(p){
+  const m1=matcher(p.v1),m2=matcher(p.v2),a=vals(p.c1),c=vals(p.c2),nv=nums(p.sum);let t=0;const hit=[];
+  a.forEach((v,i)=>{if(m1(v)&&m2(c[i])){hit.push(i);if(!isNaN(nv[i]))t+=nv[i];}});
+  const f='=SUMIFS('+R(p.sum)+','+R(p.c1)+','+critArg(p.v1)+','+R(p.c2)+','+critArg(p.v2)+')';
+  const pr=proofRows([p.c1,p.c2,p.sum],hit);pr.foot=['Total','',fmt(t)];
+  return{cell:tgt(false),formula:f,
+   plain:'Adds up '+b(nm(p.sum))+' only for rows where '+b(nm(p.c1))+' is '+b(p.v1)+' <b>and</b> '+b(nm(p.c2))+' is '+b(p.v2)+'.',
+   result:fmt(t),note:hit.length+' matching row'+(hit.length===1?'':'s'),proof:pr,steps:summarySteps(tgt(false)),
+   warnings:dataWarns([p.sum,p.c1,p.c2]).concat(['Both conditions must be true on the same row. If you need &ldquo;either / or&rdquo;, add two SUMIFS together.','All ranges must be the same size, or Excel shows #VALUE!.']),
+   alts:[],format:{pick:'Formula',why:'One answer for one combination. For a grid of '+nm(p.c1)+' by '+nm(p.c2)+', use a PivotTable with one field in Rows and one in Columns.'}};
+ }},
+{id:'countifs',group:'Count',label:'Count rows where a column matches',
+ fields:[{k:'crit',label:'Look in this column',kind:'any'},{k:'val',label:'Count rows that are (type or pick)',kind:'val',of:'crit'}],
+ build(p){
+  const m=matcher(p.val),hit=[];vals(p.crit).forEach((v,i)=>{if(m(v))hit.push(i);});
+  const f='=COUNTIFS('+R(p.crit)+','+critArg(p.val)+')';
+  return{cell:tgt(false),formula:f,
+   plain:'Counts the rows where '+b(nm(p.crit))+' is '+b(p.val)+'.',
+   result:String(hit.length),note:'out of '+S.rows.length+' rows',proof:proofRows([p.crit,S.cols.find(c=>c.i!==p.crit)?S.cols.find(c=>c.i!==p.crit).i:p.crit],hit),steps:summarySteps(tgt(false)),
+   warnings:dataWarns([p.crit]).concat(['COUNTIFS counts matching cells. To count blank cells use <b>=COUNTBLANK('+esc(R(p.crit))+')</b>.','For &ldquo;contains&rdquo;, put stars around the word: <b>&quot;*'+esc(p.val)+'*&quot;</b>.']),
+   alts:[{title:'One condition only: COUNTIF',formula:'=COUNTIF('+R(p.crit)+','+critArg(p.val)+')',note:'Works in every Excel version and gives the same answer for a single condition.'}],
+   format:{pick:'PivotTable',why:'To count every '+nm(p.crit)+' at once, drag it to Rows and again to Values (it shows Count).'}};
+ }},
+{id:'countunique',group:'Count',label:'Count different items in a column',
+ fields:[{k:'col',label:'Count different items in',kind:'any'}],
+ build(p){
+  const set=new Set(vals(p.col).map(v=>v.trim().toLowerCase()).filter(Boolean));
+  const r=R(p.col,true);
+  return{cell:tgt(false),formula:'=SUMPRODUCT(('+r+'<>"")/COUNTIF('+r+','+r+'&""))',
+   plain:'Counts how many different entries appear in '+b(nm(p.col))+', each counted once.',
+   result:String(set.size),note:'different entries in '+S.rows.length+' rows',
+   proof:{title:'The different entries',headers:[nm(p.col)],rows:Array.from(set).slice(0,8).map(v=>[distinct(p.col,200).find(x=>x.toLowerCase()===v)||v]),more:Math.max(0,set.size-8)},
+   steps:summarySteps(tgt(false)),
+   warnings:dataWarns([p.col]).concat(['This version copes with blank cells. The shorter <b>=SUMPRODUCT(1/COUNTIF(range,range))</b> shows #DIV/0! if any cell is blank.','It can be slow on tens of thousands of rows.','Excel does not tell &ldquo;North&rdquo; and &ldquo;north&rdquo; apart, but it does treat &ldquo;North &rdquo; (with a space) as different.']),
+   alts:[{title:'Excel 2021 and Microsoft 365',formula:'=COUNTA(UNIQUE('+r+'))',note:'Shorter and faster. It does not work in Excel 2016 or 2019 (you would see #NAME?).'}],
+   format:{pick:'Formula',why:'A single count. A PivotTable would also list the items.'}};
+ }},
+{id:'averageifs',group:'Average',label:'Average where a column matches',
+ fields:[{k:'avg',label:'Average this column',kind:'num'},{k:'crit',label:'Where this column…',kind:'any'},{k:'val',label:'…is',kind:'val',of:'crit'}],
+ build(p){
+  const m=matcher(p.val),cv=vals(p.crit),nv=nums(p.avg);let t=0,n=0;const hit=[];
+  cv.forEach((v,i)=>{if(m(v)){hit.push(i);if(!isNaN(nv[i])){t+=nv[i];n++;}}});
+  const f='=AVERAGEIFS('+R(p.avg)+','+R(p.crit)+','+critArg(p.val)+')';
+  const pr=proofRows([p.crit,p.avg],hit);pr.foot=['Average',n?fmt(t/n):'#DIV/0!'];
+  return{cell:tgt(false),formula:f,
+   plain:'Works out the average of '+b(nm(p.avg))+' for rows where '+b(nm(p.crit))+' is '+b(p.val)+'.',
+   result:n?fmt(t/n):'#DIV/0!',note:n+' value'+(n===1?'':'s')+' averaged',proof:pr,steps:summarySteps(tgt(false)),
+   warnings:dataWarns([p.avg,p.crit]).concat(['If nothing matches, Excel shows #DIV/0!. Use the IFERROR version below to show 0 instead.','Blank cells are ignored, not counted as zero.']),
+   alts:[{title:'Show 0 when nothing matches',formula:'=IFERROR('+f.slice(1)+',0)',note:'IFERROR replaces any error with the value you choose. Use it once you know the formula is right.'}],
+   format:{pick:'PivotTable',why:'For the average of every '+nm(p.crit)+' at once, put it in Rows and set Values to Average.'}};
+ }},
+{id:'lookup',group:'Look up',label:'Find a value and bring back another column',
+ fields:[{k:'key',label:'Look for it in this column',kind:'any'},{k:'val',label:'The value to find',kind:'val',of:'key'},{k:'ret',label:'Bring back this column',kind:'any',dk:'num'}],
+ build(p){
+  const t=String(p.val).trim().toLowerCase();
+  const idx=vals(p.key).findIndex(v=>v.trim().toLowerCase()===t);
+  const res=idx<0?'#N/A':String(S.rows[idx][p.ret]).trim();
+  const lit=litArg(p.val),im='=INDEX('+R(p.ret)+',MATCH('+lit+','+R(p.key)+',0))';
+  const alts=[{title:'Works in every Excel version: INDEX and MATCH',formula:im,note:'MATCH finds which row holds the value. INDEX returns the answer from that row. The 0 means exact match.'}];
+  if(p.ret>p.key){
+    const tbl=S.whole?S.cols[p.key].letter+':'+S.cols[p.ret].letter:'$'+S.cols[p.key].letter+'$'+firstRow()+':$'+S.cols[p.ret].letter+'$'+lastRow();
+    alts.push({title:'Classic: VLOOKUP',formula:'=VLOOKUP('+lit+','+tbl+','+(p.ret-p.key+1)+',FALSE)',note:'The number '+(p.ret-p.key+1)+' counts columns from '+esc(S.cols[p.key].letter)+' to '+esc(S.cols[p.ret].letter)+'. FALSE means exact match.'});
+  }else alts.push({title:'About VLOOKUP',note:'VLOOKUP cannot return a column to the left of the one you search, so use XLOOKUP or INDEX and MATCH here.'});
+  return{cell:tgt(false),formula:'=XLOOKUP('+lit+','+R(p.key)+','+R(p.ret)+',"Not found")',
+   plain:'Finds '+b(p.val)+' in '+b(nm(p.key))+' and returns the matching '+b(nm(p.ret))+'. Shows &ldquo;Not found&rdquo; if it is missing.',
+   result:res,note:idx<0?'no match in your rows':'from row '+(firstRow()+idx),
+   proof:{title:'Where it was found',headers:[nm(p.key),nm(p.ret)],rows:idx<0?[]:[[String(S.rows[idx][p.key]).trim(),res]],more:0},
+   steps:summarySteps(tgt(false)),
+   warnings:dataWarns([p.key]).concat(['Lookups return the <b>first</b> match only. If '+esc(nm(p.key))+' repeats, later rows are not found.','XLOOKUP needs Excel 2021 or Microsoft 365. In older versions you see #NAME?, so use an alternative below.','#N/A usually means a hidden extra space, or a number stored as text on one side.']),
+   alts:alts,format:{pick:'Formula',why:'A lookup fills in a value row by row. Use it in a new column next to your data.'}};
+ }},
+{id:'pct_total',group:'Row by row',label:'Each row as a percent of the total',
+ fields:[{k:'n',label:'Column to share out',kind:'num'}],
+ build(p){
+  const v=nums(p.n),tot=v.reduce((a,x)=>a+(isNaN(x)?0:x),0),res=v.map(x=>isNaN(x)||!tot?'':pf(x/tot));
+  const cell=tgt(true);
+  return{cell:cell,formula:'='+C(p.n)+'/SUM('+R(p.n,true)+')',
+   plain:'Divides each '+b(nm(p.n))+' figure by the total of the whole column, so every row shows its share.',
+   result:res[0]||'-',note:'first row. All rows add up to 100%.',proof:rowProof([p.n],res,'Percent of total'),
+   steps:rowSteps(cell,'Percent of total','Select the new column, then go to <b>Home → Number → Percent Style (%)</b>.'),
+   warnings:dataWarns([p.n]).concat(['The dollar signs in '+b(R(p.n,true))+' lock the range. Remove them and the range slides down as you copy, so the percentages go wrong.','Do not include a Total row inside the range, or the total is counted twice.']),
+   alts:[],format:{pick:'Chart',why:'Shares read best as a bar chart sorted high to low. Use a donut only for five parts or fewer.'}};
+ }},
+{id:'running',group:'Row by row',label:'Running total down a column',
+ fields:[{k:'n',label:'Column to accumulate',kind:'num'}],
+ build(p){
+  const v=nums(p.n);let t=0;const res=v.map(x=>{if(!isNaN(x))t+=x;return fmt(t);});
+  const cell=tgt(true);
+  return{cell:cell,formula:'=SUM('+CA(p.n)+':'+C(p.n)+')',
+   plain:'Adds up '+b(nm(p.n))+' from the first row down to the current row.',
+   result:res[0]||'-',note:'first row. The last row equals the grand total.',proof:rowProof([p.n],res,'Running total'),
+   steps:rowSteps(cell,'Running total','Select the new column, then go to <b>Home → Number → Comma Style (,)</b>.'),
+   warnings:dataWarns([p.n]).concat(['Only the first cell has a dollar sign, such as '+b(CA(p.n))+'. That anchor is what makes the total grow as you copy down.','Sort your data first. A running total follows the row order.']),
+   alts:[],format:{pick:'Chart',why:'A running total shows growth over time. Use a line chart.'}};
+ }},
+{id:'rank',group:'Row by row',label:'Rank rows from highest to lowest',
+ fields:[{k:'n',label:'Rank by this column',kind:'num'}],
+ build(p){
+  const v=nums(p.n),res=v.map(x=>isNaN(x)?'':1+v.filter(y=>!isNaN(y)&&y>x).length);
+  const cell=tgt(true);
+  return{cell:cell,formula:'=RANK('+C(p.n)+','+R(p.n,true)+',0)',
+   plain:'Gives each row its position in '+b(nm(p.n))+'. 1 is the largest.',
+   result:String(res[0]===''?'-':res[0]),note:'rank of the first row',proof:rowProof([p.n],res,'Rank'),
+   steps:rowSteps(cell,'Rank','To list the rows in rank order, click any cell in the new column and use <b>Data → Sort Smallest to Largest</b>.'),
+   warnings:dataWarns([p.n]).concat(['Equal values get the same rank, and the next rank is skipped (1, 2, 2, 4).','Change the last 0 to 1 to rank from smallest to largest.']),
+   alts:[{title:'Newer name for the same function',formula:'=RANK.EQ('+C(p.n)+','+R(p.n,true)+',0)',note:'RANK.EQ is the current name. RANK still works.'}],
+   format:{pick:'Chart',why:'A sorted horizontal bar chart is the clearest way to show a ranking.'}};
+ }},
+{id:'ifflag',group:'Row by row',label:'Label each row High or Low',
+ fields:[{k:'n',label:'Check this column',kind:'num'},{k:'thr',label:'Label High when it is at least',kind:'int',def:()=>Math.round(median(nums(P.n)))},{k:'hi',label:'Label if yes',kind:'str',def:'High'},{k:'lo',label:'Label if no',kind:'str',def:'Low'}],
+ build(p){
+  const v=nums(p.n),t=isNaN(p.thr)?0:p.thr,q2=s=>String(s).replace(/"/g,'""');
+  const res=v.map(x=>isNaN(x)?'':(x>=t?p.hi:p.lo)),cell=tgt(true);
+  const f='=IF('+C(p.n)+'>='+t+',"'+q2(p.hi)+'","'+q2(p.lo)+'")';
+  return{cell:cell,formula:f,
+   plain:'Shows '+b(p.hi)+' when '+b(nm(p.n))+' is '+b(fmt(t))+' or more, otherwise '+b(p.lo)+'.',
+   result:res[0]||'-',note:'first row',proof:rowProof([p.n],res,'Label'),
+   steps:rowSteps(cell,'Label'),
+   warnings:dataWarns([p.n]).concat(['Text answers need quotes. Do not put quotes around the number '+b(String(t))+'.','Use <b>&gt;=</b> to include the limit itself, and <b>&gt;</b> to leave it out.']),
+   alts:[{title:'Three levels with IFS (Excel 2019 and later)',formula:'=IFS('+C(p.n)+'>='+(t*2)+',"High",'+C(p.n)+'>='+t+',"Medium",TRUE,"Low")',note:'Checks each rule in order and stops at the first that is true. TRUE at the end means &ldquo;anything else&rdquo;.'}],
+   format:{pick:'Formula',why:'A label per row. Add <b>Home → Conditional Formatting</b> to colour the High rows.'}};
+ }},
+{id:'growth',group:'Row by row',label:'Growth percent between two columns',
+ fields:[{k:'old',label:'Old value column',kind:'num'},{k:'nw',label:'New value column',kind:'num'}],
+ build(p){
+  const o=nums(p.old),n=nums(p.nw),res=o.map((x,i)=>(isNaN(x)||isNaN(n[i])||x===0)?'':pf((n[i]-x)/x)),cell=tgt(true);
+  return{cell:cell,formula:'=IFERROR(('+C(p.nw)+'-'+C(p.old)+')/'+C(p.old)+',"")',
+   plain:'Takes the new value, subtracts the old value, and divides by the old value. Blank if the old value is 0.',
+   result:res[0]||'-',note:'first row',proof:rowProof([p.old,p.nw],res,'Growth %'),
+   steps:rowSteps(cell,'Growth %','Select the new column, then go to <b>Home → Number → Percent Style (%)</b>.'),
+   warnings:dataWarns([p.old,p.nw]).concat(['Put the <b>old</b> value first in your thinking: growth is measured against where you started.','IFERROR hides the #DIV/0! error when the old value is 0.']),
+   alts:[],format:{pick:'Chart',why:'Growth across items reads well as a column chart with data labels.'}};
+ }},
+{id:'topn',group:'Pick out',label:'Largest value, and who owns it',
+ fields:[{k:'n',label:'Find the largest in',kind:'num'},{k:'k',label:'Which position? (1 = largest)',kind:'int',def:1},{k:'lab',label:'Name it using this column',kind:'text'}],
+ build(p){
+  const v=nums(p.n),s=v.filter(x=>!isNaN(x)).sort((a,z)=>z-a),k=Math.round(p.k);
+  const ok=k>=1&&k<=s.length,val=ok?s[k-1]:null,idx=ok?v.indexOf(val):-1;
+  const f='=LARGE('+R(p.n)+','+(isNaN(k)?1:k)+')';
+  return{cell:tgt(false),formula:f,
+   plain:'Returns number '+b(String(k))+' from the top of '+b(nm(p.n))+'.',
+   result:ok?fmt(val):'#NUM!',note:ok?'belongs to '+String(S.rows[idx][p.lab]).trim():'position is outside your data',
+   proof:{title:'Top 5',headers:[nm(p.lab),nm(p.n)],rows:v.map((x,i)=>[x,i]).filter(a=>!isNaN(a[0])).sort((a,z)=>z[0]-a[0]).slice(0,5).map(a=>[String(S.rows[a[1]][p.lab]).trim(),fmt(a[0])]),more:0},
+   steps:summarySteps(tgt(false)),
+   warnings:dataWarns([p.n]).concat(['If the position is larger than the number of values, Excel shows #NUM!.','Two rows with the same value return the first name only.']),
+   alts:[{title:'Add the name of who owns it',formula:'=INDEX('+R(p.lab)+',MATCH(LARGE('+R(p.n)+','+(isNaN(k)?1:k)+'),'+R(p.n)+',0))',note:'Type it in the cell next to the answer. For the smallest value use <b>SMALL</b> in place of LARGE.'}],
+   format:{pick:'Chart',why:'For a top-10 list, a sorted bar chart from a PivotTable does it with no formulas.'}};
+ }},
+{id:'clean_text',group:'Clean up',label:'Remove extra spaces from text',
+ fields:[{k:'col',label:'Clean this column',kind:'any',dk:'text'}],
+ build(p){
+  const raw=vals(p.col),res=raw.map(v=>v.replace(/[\x00-\x1f]/g,'').replace(/\s+/g,' ').trim()),cell=tgt(true);
+  const pr=rowProof([p.col],res.map(x=>'['+x+']'),'Cleaned');
+  pr.rows=pr.rows.map((r,i)=>['['+raw[i]+']',r[1]]);
+  return{cell:cell,formula:'=TRIM(CLEAN('+C(p.col)+'))',
+   plain:'Removes leading, trailing and doubled spaces, and hidden characters, from '+b(nm(p.col))+'.',
+   result:'['+(res[0]||'')+']',note:'first row. Square brackets show where the text starts and ends.',proof:pr,
+   steps:rowSteps(cell,'Clean '+nm(p.col),'To replace the original: select the new column, press <b>Ctrl+C</b>, right-click the first cell of '+esc(S.cols[p.col].letter)+', choose <b>Paste Options → Values</b> (the clipboard icon with 123), then delete the helper column.'),
+   warnings:['If nothing seems to change, the cell had no extra spaces.','If you delete the helper column before pasting values, the cleaned text disappears. Paste values first.','Spaces from web pages (non-breaking spaces) need <b>=TRIM(SUBSTITUTE(A2,CHAR(160)," "))</b>.'],
+   alts:[],format:{pick:'Formula',why:'Clean first, then build your PivotTable. Dirty text shows up as duplicate rows.'}};
+ }},
+{id:'text2num',group:'Clean up',label:'Turn text into real numbers',
+ fields:[{k:'col',label:'Convert this column',kind:'any',dk:'num'}],
+ build(p){
+  const raw=vals(p.col),res=raw.map(v=>{const n=parseNum(v);return isNaN(n)?'#VALUE!':String(n);}),cell=tgt(true);
+  return{cell:cell,formula:'=VALUE(SUBSTITUTE(SUBSTITUTE(TRIM('+C(p.col)+'),"₹",""),",",""))',
+   plain:'Strips spaces, the rupee sign and commas from '+b(nm(p.col))+', then turns what is left into a number.',
+   result:res[0]||'-',note:'first row',proof:rowProof([p.col],res,'As a number'),
+   steps:rowSteps(cell,'Number','Copy the new column, then right-click the original and choose <b>Paste Options → Values</b>. Finally set <b>Home → Number → General</b>.'),
+   warnings:['Text that is not a number at all gives #VALUE!. Check those cells by hand.','Dates stored as text need <b>=DATEVALUE()</b> instead. See Fix It.'],
+   alts:[{title:'No formula: Text to Columns',note:'Select the column, go to <b>Data → Text to Columns → Finish</b>. Excel converts the whole column in place. Works when the only problem is text format.'},
+         {title:'No formula: multiply by 1',note:'Type 1 in any blank cell and copy it. Select the numbers, then <b>Home → Paste → Paste Special → Multiply → OK</b>.'}],
+   format:{pick:'Formula',why:'Fix the numbers first, or SUMIFS and PivotTables will skip them.'}};
+ }}
+];
+const cur=()=>RECIPES.find(r=>r.id===S.recipe)||RECIPES[0];
+
+/* ---------- formulas tab ---------- */
+function emptyNotice(){
+  return '<div class="card"><p>Add your sheet first, so formulas use your real column letters.</p><div class="row"><button class="btn" type="button" data-go="data">Paste my data</button><button class="btn ghost" type="button" data-sample="1">Use the example</button></div></div>';
+}
+function usingHtml(){
+  if(!S.cols.length)return'<span class="pill warn">No data yet</span> <button class="link" type="button" data-go="data">Paste your sheet</button>';
+  return'<span class="pill'+(S.sample?' warn':'')+'">'+(S.sample?'Example data':'Your data')+'</span><span>'+S.cols.length+' columns, rows '+firstRow()+' to '+lastRow()+'.</span><button class="link" type="button" data-go="data">'+(S.sample?'Use my data':'Change')+'</button>';
+}
+const KINDS=['num','text','any'];
+function fieldHtml(f){
+  const id='f-'+f.k;
+  if(KINDS.indexOf(f.kind)>=0){
+    const opts=candidates(f.kind).map(i=>'<option value="'+i+'"'+(P[f.k]===i?' selected':'')+'>'+esc(S.cols[i].name)+' ('+S.cols[i].letter+')</option>').join('');
+    return'<div class="field"><label for="'+id+'">'+esc(f.label)+'</label><select id="'+id+'" data-k="'+f.k+'">'+opts+'</select></div>';
+  }
+  if(f.kind==='val'){
+    const list=distinct(P[f.of]).map(v=>'<option value="'+esc(v)+'">').join('');
+    return'<div class="field"><label for="'+id+'">'+esc(f.label)+'</label><input id="'+id+'" data-k="'+f.k+'" list="dl-'+f.k+'" value="'+esc(P[f.k])+'" autocomplete="off"><datalist id="dl-'+f.k+'">'+list+'</datalist></div>';
+  }
+  if(f.kind==='int')return'<div class="field"><label for="'+id+'">'+esc(f.label)+'</label><input id="'+id+'" data-k="'+f.k+'" type="number" step="any" value="'+esc(P[f.k])+'"></div>';
+  return'<div class="field"><label for="'+id+'">'+esc(f.label)+'</label><input id="'+id+'" data-k="'+f.k+'" type="text" value="'+esc(P[f.k])+'" autocomplete="off"></div>';
+}
+function renderParams(){
+  const box=$('#params');
+  if(!S.cols.length){box.innerHTML='';return;}
+  const rec=cur(),used=new Set();P={};
+  rec.fields.forEach(f=>{if(KINDS.indexOf(f.kind)>=0){P[f.k]=pickDefault(f.dk||f.kind,used);used.add(P[f.k]);}});
+  rec.fields.forEach(f=>{
+    if(f.kind==='val'){const d=distinct(P[f.of]);P[f.k]=d.length?d[0]:'';}
+    if(f.kind==='int'||f.kind==='str'){P[f.k]=typeof f.def==='function'?f.def():f.def;}
+  });
+  box.innerHTML=rec.fields.map(fieldHtml).join('');
+}
+function onParam(e){
+  const el=e.target.closest('[data-k]');if(!el)return;
+  const rec=cur(),f=rec.fields.find(x=>x.k===el.dataset.k);if(!f)return;
+  if(KINDS.indexOf(f.kind)>=0){
+    P[f.k]=parseInt(el.value,10);
+    rec.fields.filter(x=>x.kind==='val'&&x.of===f.k).forEach(v=>{
+      const d=distinct(P[f.k]);P[v.k]=d.length?d[0]:'';
+      $('#f-'+v.k).value=P[v.k];
+      $('#dl-'+v.k).innerHTML=d.map(x=>'<option value="'+esc(x)+'">').join('');
+    });
+  }else if(f.kind==='int'){P[f.k]=el.value===''?NaN:Number(el.value);}
+  else P[f.k]=el.value;
+  compute();
+}
+function proofHtml(p){
+  if(!p||!p.headers)return'';
+  const num=c=>/^-?[\d,.]+%?$/.test(String(c));
+  const body=p.rows.map(r=>'<tr>'+r.map(c=>'<td'+(num(c)?' class="n"':'')+'>'+esc(c)+'</td>').join('')+'</tr>').join('');
+  const foot=p.foot?'<tfoot><tr>'+p.foot.map((c,i)=>'<td'+(i&&num(c)?' class="n"':'')+'>'+esc(c)+'</td>').join('')+'</tr></tfoot>':'';
+  return'<div class="blk"><h3>'+esc(p.title||'Check it by hand')+'</h3><div class="sheet"><table><thead><tr>'+p.headers.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr></thead><tbody>'+body+'</tbody>'+foot+'</table></div>'+(p.more>0?'<p class="muted">&hellip;and '+p.more+' more row'+(p.more>1?'s':'')+'.</p>':'')+'</div>';
+}
+function barHtml(id,cell,formula,copyId){
+  return'<div class="fbar">'+(cell?'<span class="nb" title="Where to type it">'+esc(cell)+'</span><span class="fx">fx</span>':'')+'<code id="'+copyId+'">'+esc(formula)+'</code><button type="button" class="copy" data-copy="'+copyId+'">Copy</button></div>';
+}
+function outHtml(o){
+  const adv=S.level==='Advanced';
+  const alts=(o.alts||[]).map((a,i)=>'<div class="blk"><h3>'+esc(a.title)+'</h3>'+(a.formula?barHtml('',null,a.formula,'alt'+i):'')+'<p class="muted">'+a.note+'</p></div>').join('');
+  return barHtml('',o.cell,o.formula,'fcode')+
+   '<p class="muted">Type this in cell '+b(o.cell)+'. It sits clear of your data.</p>'+
+   '<div class="blk"><h3>What it does</h3><p>'+o.plain+'</p></div>'+
+   (o.result!=null?'<div class="result"><span class="muted">On your '+(S.sample?'example ':'')+'data it gives</span><span class="big">'+esc(o.result)+'</span><span class="muted">'+esc(o.note||'')+'</span></div>':'')+
+   proofHtml(o.proof)+
+   '<details'+(adv?'':' open')+'><summary>Steps</summary><div><ol class="steps">'+o.steps.map(s=>'<li>'+s+'</li>').join('')+'</ol></div></details>'+
+   '<p><span class="pill">Best as: '+esc(o.format.pick)+'</span> '+esc(o.format.why)+'</p>'+
+   (o.warnings&&o.warnings.length?'<div class="watch"><h3>Watch out for</h3><ul>'+o.warnings.map(w=>'<li>'+w+'</li>').join('')+'</ul></div>':'')+
+   alts;
+}
+function compute(){
+  const out=$('#out');
+  if(!S.cols.length){out.innerHTML=emptyNotice();return;}
+  let o;
+  try{o=cur().build(P);}catch(err){out.innerHTML='<div class="watch"><h3>Check your choices</h3><p>A formula could not be built from the current choices.</p></div>';return;}
+  out.innerHTML=outHtml(o);
+}
+
+/* ---------- data tab ---------- */
+function renderPreview(){
+  const box=$('#preview'),ro=$('#readout');
+  if(!S.cols.length){box.innerHTML='<p class="muted">Nothing pasted yet. Copy a few rows from Excel, including the heading row, and paste them above.</p>';ro.textContent='';return;}
+  const h1=S.cols.map(c=>'<th>'+c.letter+'<small>'+(c.type==='number'?'Number':c.type==='date'?'Date':'Text')+'</small></th>').join('');
+  const h2=S.cols.map(c=>'<td>'+esc(c.name)+'</td>').join('');
+  const body=S.rows.slice(0,8).map((r,ri)=>'<tr><th class="rn">'+(firstRow()+ri)+'</th>'+S.cols.map(c=>'<td'+(c.type==='number'?' class="n"':'')+'>'+esc(String(r[c.i]==null?'':r[c.i]).trim())+'</td>').join('')+'</tr>').join('');
+  box.innerHTML='<div class="sheet"><table><thead><tr><th class="rn"></th>'+h1+'</tr></thead><tbody><tr class="hdr"><th class="rn">'+S.headerRow+'</th>'+h2+'</tr>'+body+'</tbody></table></div>'+(S.rows.length>8?'<p class="muted">Showing the first 8 of '+S.rows.length+' rows.</p>':'');
+  ro.textContent='Headings are in row '+S.headerRow+'. Data runs from row '+firstRow()+' to row '+lastRow()+', columns '+S.cols[0].letter+' to '+S.cols[S.cols.length-1].letter+' ('+S.cols.length+' columns, '+S.rows.length+' rows). If that does not match your sheet, change the two boxes above.';
+}
+function renderHealth(){
+  const box=$('#health');
+  if(!S.cols.length){box.innerHTML='';return;}
+  const items=[],seen={};
+  S.cols.forEach(c=>{
+    if(!S.headers[c.i])items.push({t:'Column '+b(c.letter)+' has no heading.',f:'PivotTables and Tables need a heading in every column. Type one in cell '+c.letter+S.headerRow+'.'});
+    else{const k=c.name.toLowerCase();if(seen[k])items.push({t:'The heading '+b(c.name)+' appears twice.',f:'Give each column its own name so PivotTables can tell them apart.'});seen[k]=1;}
+    const s=c.issues;
+    if(s.spaces)items.push({t:b(c.name)+': '+s.spaces+' entr'+(s.spaces>1?'ies have':'y has')+' extra spaces.',f:'They break matching and make duplicate rows in PivotTables.',go:'formulas:clean_text'});
+    if(s.formatted)items.push({t:b(c.name)+': '+s.formatted+' number'+(s.formatted>1?'s':'')+' include commas or symbols.',f:'If they are left-aligned in Excel, they are text.',go:'formulas:text2num'});
+    if(s.nonNumeric)items.push({t:b(c.name)+': '+s.nonNumeric+' cell'+(s.nonNumeric>1?'s':'')+' in a number column are text (for example '+b(s.sampleText)+').',f:'SUM and AVERAGE skip them.',go:'formulas:text2num'});
+    if(s.blanks&&c.filled)items.push({t:b(c.name)+': '+s.blanks+' blank cell'+(s.blanks>1?'s':'')+'.',f:'A PivotTable shows (blank). Fill them or filter them out.'});
+  });
+  box.innerHTML='<h3>Data check</h3>'+(items.length?'<div class="watch"><ul>'+items.map(i=>'<li>'+i.t+' '+esc(i.f)+(i.go?' <button class="link" type="button" data-go="'+i.go+'">Show the fix</button>':'')+'</li>').join('')+'</ul></div>':'<p><span class="pill">Looks clean</span> No blanks, stray spaces or text-numbers found in these rows.</p>');
+}
+
+/* ---------- report tab ---------- */
+const GOALS=[
+ {id:'compare',label:'Compare categories',chart:'Clustered bar chart',why:'Bars side by side make differences between categories easy to judge.',
+  steps:cat=>['Click inside the PivotTable, then go to <b>PivotTable Analyze → PivotChart</b>.','Choose <b>Bar → Clustered Bar</b> and click <b>OK</b>.','Sort so the longest bar is on top: use the drop-down beside Row Labels, then <b>More Sort Options → Descending</b>.']},
+ {id:'trend',label:'Show change over time',chart:'Line chart',why:'A line shows direction and turning points across dates.',
+  steps:cat=>['Put your date column in <b>Rows</b>. Right-click any date in the PivotTable and choose <b>Group</b>, then pick <b>Months</b> (and <b>Years</b> if the data spans years).','Click inside the PivotTable, then go to <b>PivotTable Analyze → PivotChart</b>.','Choose <b>Line → Line with Markers</b> and click <b>OK</b>.']},
+ {id:'share',label:'Show each part of a whole',chart:'Donut chart',why:'A donut shows how a total splits, but only reads well with five parts or fewer.',
+  steps:cat=>['Click inside the PivotTable, then go to <b>PivotTable Analyze → PivotChart</b>.','Choose <b>Pie → Doughnut</b> and click <b>OK</b>.','Add labels: <b>Chart Design → Add Chart Element → Data Labels → More Data Label Options</b>, then tick <b>Percentage</b>.']},
+ {id:'rank',label:'Rank the best and worst',chart:'Sorted horizontal bar chart',why:'Sorted bars turn a list into a ranking at a glance.',
+  steps:cat=>['In the PivotTable, click the arrow beside Row Labels and choose <b>Top 10…</b> (or <b>More Sort Options → Descending</b>).','Click inside the PivotTable, then go to <b>PivotTable Analyze → PivotChart → Bar → Clustered Bar</b>.','Reverse the order so rank 1 is on top: right-click the vertical axis, choose <b>Format Axis</b>, tick <b>Categories in reverse order</b>.']},
+ {id:'target',label:'Compare actual with a target',chart:'Column chart with a target line',why:'Columns show actuals and a line shows the target they should reach.',
+  steps:cat=>['Add a target column beside your summary table, one target per row.','Select the table, then go to <b>Insert → Recommended Charts → All Charts → Combo</b>.','Set actual to <b>Clustered Column</b> and target to <b>Line</b>, then click <b>OK</b>.']},
+ {id:'relation',label:'Check if two numbers move together',chart:'Scatter chart',why:'Each dot is one row, so patterns and outliers show up.',
+  steps:cat=>['Select two number columns from your data (not the PivotTable).','Go to <b>Insert → Insert Scatter (X, Y) → Scatter</b>.','Add a trend line: click the chart, then <b>Chart Design → Add Chart Element → Trendline → Linear</b>.']}
+];
+const LAYOUTS={
+ sales:{label:'Sales report',kpis:['Total sales','Units sold','Average order','Top region'],charts:[['Sales by region','Bar chart'],['Sales by month','Line chart']],table:'Top 10 salespeople (from a PivotTable)'},
+ budget:{label:'Budget vs actual tracker',kpis:['Budget','Actual','Variance','Variance %'],charts:[['Budget vs actual by department','Clustered column chart'],['Monthly actual vs budget','Line chart']],table:'Line items with variance and a red or green flag'},
+ hr:{label:'HR dashboard',kpis:['Headcount','New joiners','Exits','Attrition %'],charts:[['Headcount by department','Bar chart'],['Joiners vs exits by month','Clustered column chart']],table:'Open positions by department'},
+ ops:{label:'Operations tracker',kpis:['Open tasks','Overdue','Done this month','On-time %'],charts:[['Tasks by status','Donut chart'],['Completed per week','Line chart']],table:'Overdue tasks sorted by due date'},
+ finance:{label:'Monthly finance (MIS) pack',kpis:['Revenue','Expenses','Net profit','Margin %'],charts:[['Revenue vs expenses','Combo chart'],['Expense split','Sorted bar chart']],table:'Month-on-month comparison'}
+};
+const CHECKS=[
+ 'Hide gridlines: <b>View → Show → untick Gridlines</b>.',
+ 'Freeze the heading row: <b>View → Freeze Panes → Freeze Top Row</b>.',
+ 'Format numbers: <b>Home → Number</b>, then Comma Style or Percent Style. Keep decimals consistent.',
+ 'Use one font and two colours: <b>Home → Font</b>.',
+ 'Add filters that anyone can click: <b>PivotTable Analyze → Insert Slicer</b>.',
+ 'Rename sheets and put the summary first: right-click a sheet tab, then <b>Rename</b>, and drag it to the left.',
+ 'Check the numbers: the PivotTable Grand Total must equal <b>=SUM</b> of the source column.',
+ 'Prepare to print: <b>Page Layout → Orientation</b>, then <b>Page Layout → Scale to Fit → Width: 1 page</b>.'
+];
+function pivotRows(cat,val,fn){
+  const map=new Map();
+  S.rows.forEach(r=>{
+    const k=String(r[cat]==null?'':r[cat]).trim()||'(blank)',v=parseNum(r[val]);
+    const e=map.get(k)||{sum:0,n:0,cnt:0};if(!isNaN(v)){e.sum+=v;e.n++;}e.cnt++;map.set(k,e);
+  });
+  return Array.from(map.entries()).map(a=>({k:a[0],v:fn==='Count'?a[1].cnt:fn==='Average'?(a[1].n?a[1].sum/a[1].n:0):a[1].sum})).sort((x,y)=>y.v-x.v);
+}
+function renderRepSel(){
+  const ctrl=$('#rep-ctrl');
+  if(!S.cols.length){ctrl.hidden=true;return;}
+  ctrl.hidden=false;
+  const ok=i=>Number.isInteger(i)&&i>=0&&i<S.cols.length;
+  if(!ok(REP.cat))REP.cat=pickDefault('text',new Set());
+  if(!ok(REP.val))REP.val=pickDefault('num',new Set([REP.cat]));
+  const opt=(list,sel)=>list.map(i=>'<option value="'+i+'"'+(i===sel?' selected':'')+'>'+esc(S.cols[i].name)+' ('+S.cols[i].letter+')</option>').join('');
+  $('#r-cat').innerHTML=opt(allCols(),REP.cat);
+  $('#r-val').innerHTML=opt(allCols(),REP.val);
+  $('#r-fn').value=REP.fn;
+  $('#r-goal').innerHTML=GOALS.map(g=>'<option value="'+g.id+'"'+(g.id===REP.goal?' selected':'')+'>'+esc(g.label)+'</option>').join('');
+}
+function renderReport(){
+  const out=$('#rep-out');
+  if(!S.cols.length){out.innerHTML=emptyNotice();return;}
+  const cat=REP.cat,val=REP.val,fn=REP.fn,goal=GOALS.find(g=>g.id===REP.goal)||GOALS[0];
+  const rows=pivotRows(cat,val,fn);
+  const allN=nums(val).filter(x=>!isNaN(x));
+  const tot=fn==='Count'?S.rows.length:fn==='Average'?(allN.length?allN.reduce((a,x)=>a+x,0)/allN.length:0):allN.reduce((a,x)=>a+x,0);
+  const max=Math.max.apply(null,rows.map(r=>Math.abs(r.v)).concat([1]));
+  const fnLabel=fn==='Count'?'Count of '+nm(cat):fn+' of '+nm(val);
+  let chart=goal.chart,why=goal.why,notes=[];
+  if(goal.id==='share'&&rows.length>5){chart='Sorted bar chart';why='You have '+rows.length+' parts. A donut gets crowded beyond five, so a sorted bar chart is clearer.';}
+  if(goal.id==='trend'&&S.cols[cat].type!=='date')notes.push('For a trend, choose your <b>date column</b> in &ldquo;Group by&rdquo;. '+b(nm(cat))+' is not a date column.');
+  if(S.cols[val].type!=='number'&&fn!=='Count')notes.push(b(nm(val))+' is not a number column, so '+esc(fn.toLowerCase())+' will not work. Pick a number column as the measure.');
+  if(S.cols[val].issues.formatted)notes.push(b(nm(val))+' has numbers with commas or symbols. If they are text, the PivotTable counts them instead of adding them.');
+  const pv='<div class="blk"><h3>Preview of your PivotTable</h3><div class="sheet pv"><table><thead><tr><th>'+esc(nm(cat))+'</th><th>'+esc(fnLabel)+'</th><th></th></tr></thead><tbody>'+
+    rows.slice(0,12).map((r,i)=>'<tr><td>'+esc(r.k)+'</td><td class="n">'+fmt(r.v)+'</td><td class="bar"><i data-w="'+Math.max(0,Math.round(Math.abs(r.v)/max*100))+'"></i></td></tr>').join('')+
+    '</tbody><tfoot><tr><td>Grand Total</td><td class="n">'+fmt(tot)+'</td><td></td></tr></tfoot></table></div>'+(rows.length>12?'<p class="muted">Showing the 12 largest of '+rows.length+' groups.</p>':'')+'</div>';
+  const valStep=fn==='Sum'?'Drag '+b(nm(val))+' into <b>Values</b>. It appears as &ldquo;Sum of '+esc(nm(val))+'&rdquo;.':fn==='Average'?'Drag '+b(nm(val))+' into <b>Values</b>, click it, choose <b>Value Field Settings → Average → OK</b>.':'Drag '+b(nm(cat))+' into <b>Values</b> as well. Text fields show as &ldquo;Count of '+esc(nm(cat))+'&rdquo;.';
+  const steps=['Click any cell inside your data, for example '+b(S.cols[0].letter+firstRow())+'. If you plan to add rows later, press <b>Ctrl+T</b> first to turn the data into a Table.','Go to <b>Insert → PivotTable → From Table/Range</b>, choose <b>New Worksheet</b> and click <b>OK</b>.','In the <b>PivotTable Fields</b> pane, drag '+b(nm(cat))+' into <b>Rows</b>.',valStep].concat(goal.steps(cat));
+  out.innerHTML=pv+'<p><span class="pill">Best as: PivotTable, then a chart</span> '+esc(goal.label)+' works best as a <b>'+esc(chart)+'</b>. '+esc(why)+'</p>'+
+    '<details'+(S.level==='Advanced'?'':' open')+'><summary>Steps</summary><div><ol class="steps">'+steps.map(s=>'<li>'+s+'</li>').join('')+'</ol></div></details>'+
+    '<div class="watch"><h3>Watch out for</h3><ul>'+notes.map(n=>'<li>'+n+'</li>').join('')+'<li>The ribbon tab is called <b>PivotTable Analyze</b> in Excel 2019 and Microsoft 365, and <b>Analyze</b> in older versions.</li><li>New rows do not appear until you refresh: <b>PivotTable Analyze → Refresh</b> (Alt+F5).</li><li>A blank heading anywhere in your data gives &ldquo;PivotTable field name is not valid&rdquo;.</li></ul></div>';
+  $$('i[data-w]',out).forEach(i=>{i.style.width=i.dataset.w+'%';});
+}
+function renderLayout(){
+  const L=LAYOUTS[$('#lay').value]||LAYOUTS.sales;
+  $('#lay-out').innerHTML='<div class="wf" aria-label="Report layout"><div class="kpis">'+L.kpis.map(k=>'<div class="tile"><span class="muted">'+esc(k)+'</span><b>000</b></div>').join('')+'</div><div class="charts">'+L.charts.map(c=>'<div class="ph"><span>'+esc(c[0])+'</span><small>'+esc(c[1])+'</small></div>').join('')+'</div><div class="ph"><span>'+esc(L.table)+'</span><small>Table</small></div></div>'+
+   '<p class="muted">Put the raw data on its own sheet, the PivotTables on a second sheet, and this page on the first sheet. Everything on this page should link to the PivotTables, so refreshing updates the report.</p>'+
+   '<div class="blk"><h3>Make it presentation-ready</h3><div class="checks">'+CHECKS.map(c=>'<label class="chk"><input type="checkbox"><span>'+c+'</span></label>').join('')+'</div></div>';
+}
+
+/* ---------- fix tab ---------- */
+const FIXES=[
+ {t:'#N/A',k:'not available lookup vlookup xlookup match missing',means:'Excel looked for something and did not find it.',steps:['Check that the value really exists in the column you search.','Look for hidden extra spaces: wrap it with <b>=TRIM()</b>.','A number stored as text will not match a real number. Convert one side with <b>=VALUE()</b>.','In VLOOKUP, make sure the last argument is <b>FALSE</b>.','If a blank is fine, wrap the formula in IFERROR (tool below).'],ex:'=IFERROR(VLOOKUP(A2,Prices!A:B,2,FALSE),"Not found")'},
+ {t:'#VALUE!',k:'wrong type text number space',means:'The formula expected a number or date but found text, or a space.',steps:['Click the cell, then go to <b>Formulas → Evaluate Formula → Evaluate</b> to see which step fails.','Check the cells it uses for text or stray spaces.','Use <b>=SUM()</b> instead of adding cells with +. SUM skips text, plus does not.','Make all ranges the same size in SUMIFS and COUNTIFS.'],ex:'=SUM(E2:E13)'},
+ {t:'#REF!',k:'reference deleted column row moved',means:'The formula points at a cell that was deleted.',steps:['If you just deleted something, press <b>Ctrl+Z</b> at once.','Otherwise click the cell and find <b>#REF!</b> inside the formula bar.','Retype that part with the correct range.','Avoid deleting columns that formulas use. Hide them instead: right-click the column letter, then <b>Hide</b>.'],ex:''},
+ {t:'#NAME?',k:'name unknown function typo quotes xlookup unique',means:'Excel does not recognise a word in the formula.',steps:['Check the spelling of the function name.','Text inside a formula needs quotes, such as <b>"North"</b>.','XLOOKUP, UNIQUE and FILTER do not exist in Excel 2016 and 2019. Use INDEX and MATCH instead.','Check that a range has its colon, such as <b>E2:E13</b>.'],ex:'=INDEX(E:E,MATCH("North",A:A,0))'},
+ {t:'#DIV/0!',k:'divide zero blank',means:'The formula divides by zero or by an empty cell.',steps:['Find the cell the formula divides by. It is zero or blank.','Either fix that cell, or test it first.','Or hide the error with IFERROR (tool below).'],ex:'=IF(D2=0,0,E2/D2)'},
+ {t:'#NUM!',k:'number too large invalid sqrt irr',means:'A number is invalid for the function, or too large or small.',steps:['Check for a negative number inside SQRT, or a position larger than your data in LARGE and SMALL.','For IRR and RATE, give a starting guess as the last argument.','Check that dates are real dates.'],ex:''},
+ {t:'#NULL!',k:'space comma colon range',means:'Excel found a space where it expected a comma or colon.',steps:['Look at the formula for two ranges separated by a space.','Use a colon for a range, such as <b>A2:A10</b>.','Use a comma between separate cells, such as <b>A2,A10</b>.'],ex:'=SUM(A2:A10)'},
+ {t:'##### in a cell',k:'hashes narrow column width date negative',means:'The column is too narrow to show the number, or a date or time is negative.',steps:['Double-click the right edge of the column letter to widen it.','Or select the column and go to <b>Home → Format → AutoFit Column Width</b>.','If it still shows, check for a negative date or time.'],ex:''},
+ {t:'Numbers stored as text',k:'green triangle left aligned text number convert sum zero',means:'The cell looks like a number but Excel treats it as text. Totals skip it.',steps:['Select the cells and click the yellow warning icon, then choose <b>Convert to Number</b>.','Or select the column and go to <b>Data → Text to Columns → Finish</b>.','Or type 1 in a blank cell, copy it, select the numbers, then <b>Home → Paste → Paste Special → Multiply → OK</b>.','Then set <b>Home → Number → General</b>.'],ex:''},
+ {t:'Formula shows as text, not the answer',k:'displays formula text apostrophe general format manual',means:'The cell is formatted as Text, or Show Formulas is switched on.',steps:['Select the cell and set <b>Home → Number → General</b>.','Press <b>F2</b>, then <b>Enter</b> to re-enter it.','Check <b>Formulas → Show Formulas</b> is not highlighted.','Check there is no apostrophe at the start.'],ex:''},
+ {t:'Formulas do not update',k:'calculation manual stuck f9 recalculate',means:'Calculation is set to Manual.',steps:['Go to <b>Formulas → Calculation Options → Automatic</b>.','Press <b>F9</b> to recalculate now.'],ex:''},
+ {t:'SUMIFS or COUNTIFS returns 0',k:'sumifs countifs zero criteria not matching',means:'Nothing matched your condition, or the numbers are text.',steps:['Check the condition text against the cells. A trailing space breaks the match.','Check the sum column has real numbers, not text.','Check all ranges have the same number of rows.','To match part of a word, use stars: <b>"*north*"</b>.'],ex:'=SUMIFS(E:E,A:A,"*north*")'},
+ {t:'PivotTable is missing new rows',k:'pivot refresh update source range',means:'The PivotTable still reads the old range.',steps:['Click inside it and go to <b>PivotTable Analyze → Refresh</b>.','If the new rows are still missing, go to <b>PivotTable Analyze → Change Data Source</b> and extend the range.','Prevent this: click inside your data and press <b>Ctrl+T</b> to make it a Table, then rebuild the PivotTable from the Table.'],ex:''},
+ {t:'Dates will not sort or group',k:'date text sort group month datevalue',means:'The dates are text, so Excel cannot treat them as dates.',steps:['Select the column and go to <b>Data → Text to Columns → Next → Next</b>.','Under Column data format choose <b>Date</b> and the matching order, such as <b>DMY</b>, then <b>Finish</b>.','Or use <b>=DATEVALUE(A2)</b> in a new column.','Check day and month are not swapped: 03/04 means different dates in different regions.'],ex:'=DATEVALUE(F2)'},
+ {t:'VLOOKUP gives the wrong value',k:'vlookup wrong approximate exact false column index',means:'It is using approximate match, or the column number is off.',steps:['Make the last argument <b>FALSE</b> for an exact match.','The column number counts from the first column of the table you gave, not from column A.','The value you search must be in the first column of that table.'],ex:'=VLOOKUP(A2,A:E,5,FALSE)'}
+];
+function renderFix(){
+  const q=$('#fix-q').value.trim().toLowerCase();
+  const list=FIXES.filter(f=>!q||(f.t+' '+f.k+' '+f.means).toLowerCase().indexOf(q)>=0);
+  $('#fix-list').innerHTML=list.length?list.map((f,i)=>'<details><summary>'+esc(f.t)+'</summary><div><p>'+f.means+'</p><ol class="steps">'+f.steps.map(s=>'<li>'+s+'</li>').join('')+'</ol>'+(f.ex?barHtml('',null,f.ex,'fx'+i):'')+'</div></details>').join(''):'<p class="muted" style="padding:12px 0">Nothing matches. Try a word such as text, blank, pivot or dates.</p>';
+}
+function renderIfe(){
+  $('#ife-cw').hidden=$('#ife-fb').value!=='custom';
+  let f=$('#ife-in').value.trim().replace(/^=+/,'');
+  const out=$('#ife-out');
+  if(!f){out.innerHTML='<p class="muted">Type a formula above.</p>';return;}
+  const m=$('#ife-fb').value,c=$('#ife-custom').value;
+  const fb=m==='blank'?'""':m==='zero'?'0':m==='nf'?'"Not found"':(/^-?\d+(\.\d+)?$/.test(c.trim())?c.trim():'"'+c.replace(/"/g,'""')+'"');
+  out.innerHTML=barHtml('',null,'=IFERROR('+f+','+fb+')','ife-code')+'<p class="muted">If the formula gives any error, the cell shows '+(fb==='""'?'nothing':esc(fb.replace(/^"|"$/g,'')))+' instead.</p><div class="watch"><h3>Watch out for</h3><ul><li>IFERROR hides every error, including real mistakes. Get the formula right first, then wrap it.</li><li>Do not wrap a formula that must stay visible, such as a check total.</li></ul></div>';
+}
+
+/* ---------- about ---------- */
+const AB=['name','role','dept','tools','level','reports'];
+function loadAbout(){
+  let d={};try{d=JSON.parse(store.get('era.about')||'{}')||{};}catch(e){}
+  AB.forEach(k=>{const el=$('#a-'+k);if(el&&d[k]!=null)el.value=d[k];});
+  applyAbout();
+}
+function applyAbout(){
+  S.level=$('#a-level').value;
+  const n=$('#a-name').value.trim();
+  $('#hello').textContent=n?'Hello, '+n+'. Paste a few rows of your sheet to get the exact formula, the steps and the right report format.':'Paste a few rows of your sheet. Get the exact formula, the menu steps and the right report format.';
+}
+function saveAbout(){
+  const d={};AB.forEach(k=>{d[k]=$('#a-'+k).value;});
+  store.set('era.about',JSON.stringify(d));applyAbout();compute();renderReport();
+}
+
+/* ---------- plumbing ---------- */
+function refreshAll(){
+  const t=parseTable(S.raw);S.headers=t.headers;S.rows=t.rows;
+  S.sample=S.raw.trim()===SAMPLE.trim();
+  analyse();
+  $('#sample-flag').hidden=!S.sample;
+  renderPreview();renderHealth();
+  $('#using-f').innerHTML=usingHtml();$('#using-r').innerHTML=usingHtml();
+  renderParams();compute();renderRepSel();renderReport();
+}
+function setRaw(v){S.raw=v;$('#paste').value=v;store.set('era.paste',v);refreshAll();}
+const TABS=['formulas','data','report','fix','about'];
+function show(id){
+  if(TABS.indexOf(id)<0)id='formulas';
+  TABS.forEach(t=>{$('#p-'+t).hidden=t!==id;$('#t-'+t).setAttribute('aria-selected',t===id?'true':'false');});
+  try{history.replaceState(null,'','#'+id);}catch(e){}
+  window.scrollTo(0,0);
+}
+function copyFrom(el,btn){
+  const t=el.textContent,label=btn.textContent;
+  const done=()=>{btn.textContent='Copied';setTimeout(()=>{btn.textContent=label;},1400);};
+  const sel=()=>{const r=document.createRange();r.selectNodeContents(el);const s=window.getSelection();s.removeAllRanges();s.addRange(r);btn.textContent='Press Ctrl+C';setTimeout(()=>{btn.textContent=label;},2200);};
+  try{navigator.clipboard.writeText(t).then(done,sel);}catch(err){sel();}
+}
+document.addEventListener('click',e=>{
+  const cp=e.target.closest('[data-copy]');
+  if(cp){const el=document.getElementById(cp.dataset.copy);if(el)copyFrom(el,cp);return;}
+  if(e.target.closest('[data-sample]')){setRaw(SAMPLE);return;}
+  const g=e.target.closest('[data-go]');
+  if(g){
+    const parts=g.dataset.go.split(':');
+    if(parts[0]==='formulas'&&parts[1]){S.recipe=parts[1];$('#recipe').value=parts[1];renderParams();compute();}
+    show(parts[0]);
+  }
+});
+$('#params').addEventListener('input',onParam);
+$('#params').addEventListener('change',onParam);
+$('#recipe').addEventListener('change',e=>{S.recipe=e.target.value;renderParams();compute();});
+$('#rangemode').addEventListener('change',e=>{S.whole=e.target.value==='whole';compute();});
+let timer=null;
+$('#paste').addEventListener('input',e=>{
+  S.raw=e.target.value;store.set('era.paste',S.raw);
+  clearTimeout(timer);timer=setTimeout(refreshAll,200);
+});
+$('#b-sample').addEventListener('click',()=>setRaw(SAMPLE));
+$('#b-clear').addEventListener('click',()=>{setRaw('');$('#paste').focus();});
+$('#hdr').addEventListener('change',e=>{const n=parseInt(e.target.value,10);S.headerRow=n>=1?n:1;e.target.value=S.headerRow;store.set('era.hdr',String(S.headerRow));refreshAll();});
+$('#col0').addEventListener('change',e=>{const v=e.target.value.trim().toUpperCase();S.startCol=/^[A-Z]{1,2}$/.test(v)?v:'A';e.target.value=S.startCol;store.set('era.col0',S.startCol);refreshAll();});
+$('#r-cat').addEventListener('change',e=>{REP.cat=parseInt(e.target.value,10);renderReport();});
+$('#r-val').addEventListener('change',e=>{REP.val=parseInt(e.target.value,10);renderReport();});
+$('#r-fn').addEventListener('change',e=>{REP.fn=e.target.value;renderReport();});
+$('#r-goal').addEventListener('change',e=>{REP.goal=e.target.value;renderReport();});
+$('#lay').addEventListener('change',renderLayout);
+$('#fix-q').addEventListener('input',renderFix);
+['#ife-in','#ife-fb','#ife-custom'].forEach(s=>{$(s).addEventListener('input',renderIfe);$(s).addEventListener('change',renderIfe);});
+AB.forEach(k=>{$('#a-'+k).addEventListener('input',saveAbout);$('#a-'+k).addEventListener('change',saveAbout);});
+
+/* ---------- boot ---------- */
+(function boot(){
+  const groups=[];RECIPES.forEach(r=>{if(groups.indexOf(r.group)<0)groups.push(r.group);});
+  $('#recipe').innerHTML=groups.map(g=>'<optgroup label="'+esc(g)+'">'+RECIPES.filter(r=>r.group===g).map(r=>'<option value="'+r.id+'">'+esc(r.label)+'</option>').join('')+'</optgroup>').join('');
+  $('#lay').innerHTML=Object.keys(LAYOUTS).map(k=>'<option value="'+k+'">'+esc(LAYOUTS[k].label)+'</option>').join('');
+  const h=parseInt(store.get('era.hdr'),10);if(h>=1)S.headerRow=h;
+  const c0=store.get('era.col0');if(c0&&/^[A-Z]{1,2}$/.test(c0))S.startCol=c0;
+  $('#hdr').value=S.headerRow;$('#col0').value=S.startCol;
+  const saved=store.get('era.paste');
+  S.raw=saved===null?SAMPLE:saved;
+  $('#paste').value=S.raw;
+  loadAbout();
+  refreshAll();renderLayout();renderFix();renderIfe();
+  show((location.hash||'').replace('#','')||'formulas');
+})();
+})();
+</script>
+
+</html>
